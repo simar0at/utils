@@ -334,27 +334,25 @@ public class PrinterBase
 	public void print(String text)
 	{
 		int from = 0;
+		int lineSepLength = 1;
 		int length = text.length();
 		while (from < length)
 		{
 			boolean hadNewline = false;
 			
-			// Find the newline
 			int to = from;
-			int lineSepLength = 1;
+			// find the newline
+			
 			for (; to < length; ++to)
 			{
 				char ch = text.charAt(to);
-				if (ch == '\r') // Mac
+				if (ch == '\n' | ch == '\r') //Unix, Mac
 				{
 					hadNewline = true;
-					if (to + 1 < length && text.charAt(to) == '\n' ) // Windows
+					if (to > 0 && text.charAt(to - 1) == '\r' ) { // Windows
+						to--;
 						lineSepLength = 2;
-					break;
-				}
-				else if (ch == '\n') // Unix
-				{
-					hadNewline = true;
+					}
 					break;
 				}
 			}
