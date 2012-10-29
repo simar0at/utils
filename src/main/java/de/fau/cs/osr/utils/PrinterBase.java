@@ -349,7 +349,7 @@ public class PrinterBase
 				if (ch == '\n' | ch == '\r') //Unix, Mac
 				{
 					hadNewline = true;
-					if (to > 0 && text.charAt(to - 1) == '\r' ) { // Windows
+					if (to > 0 && ch == '\n' && text.charAt(to - 1) == '\r' ) { // Windows
 						to--;
 						lineSepLength = 2;
 					}
