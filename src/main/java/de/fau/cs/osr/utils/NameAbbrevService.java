@@ -124,7 +124,7 @@ public class NameAbbrevService
 		if (classWithPrefix != null)
 		{
 			String[] tmp = classWithPrefix.split(":"); 
-			return new String[] {tmp[1], tmp[0]}; 
+			return new String[] {tmp[1] + suffix, tmp[0]}; 
 		}
 				
 		// clazz.getSimpleName(); doesn't work for nested classes!
