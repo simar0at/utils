@@ -33,50 +33,50 @@ public class NameAbbrevServiceTest
 	
 	private final Class clazz2C = de.fau.cs.osr.utils.test2.ClassC.class;
 	
-	private final String abbrev1A = "ClassA";
+	private final String[] abbrev1A = new String[] {"ClassA", "ptk"};
 	
-	private final String abbrev1B = "ClassB";
+	private final String[] abbrev1B = new String[] {"ClassB", "ptk"};
 	
-	private final String abbrev2B = "de.fau.cs.osr.utils.test2.ClassB";
+	private final String[] abbrev2B = new String[] {"de.fau.cs.osr.utils.test2.ClassB", "ptk"};
 	
-	private final String abbrev2C = "ClassC";
+	private final String[] abbrev2C = new String[] {"ClassC", "ptk"};
 	
 	// =========================================================================
 	
 	@Test
 	public void testAbbrevAndResolution() throws Exception
 	{
-		NameAbbrevService s = new NameAbbrevService(new String[] {
-				"de.fau.cs.osr.utils.test1",
-				"de.fau.cs.osr.utils.test2" });
+		NameAbbrevService s = new NameAbbrevService(
+				new String[] {"de.fau.cs.osr.utils.test1", "ptk"},
+				new String[] {"de.fau.cs.osr.utils.test2", "ptk"});
 		
 		assertThat(s.abbrev(clazz1A), equalTo(abbrev1A));
 		assertThat(s.abbrev(clazz1B), equalTo(abbrev1B));
 		assertThat(s.abbrev(clazz2B), equalTo(abbrev2B));
 		assertThat(s.abbrev(clazz2C), equalTo(abbrev2C));
 		
-		assertThat(s.resolve(abbrev1A), equalTo(clazz1A));
-		assertThat(s.resolve(abbrev1B), equalTo(clazz1B));
-		assertThat(s.resolve(abbrev2B), equalTo(clazz2B));
-		assertThat(s.resolve(abbrev2C), equalTo(clazz2C));
+		assertThat(s.resolve(abbrev1A[0]), equalTo(clazz1A));
+		assertThat(s.resolve(abbrev1B[0]), equalTo(clazz1B));
+		assertThat(s.resolve(abbrev2B[0]), equalTo(clazz2B));
+		assertThat(s.resolve(abbrev2C[0]), equalTo(clazz2C));
 	}
 	
 	@Test
 	public void testAbbrevOrderBHasSameResolutionAsAbbrevOrderA() throws Exception
 	{
-		NameAbbrevService s = new NameAbbrevService(new String[] {
-				"de.fau.cs.osr.utils.test1",
-				"de.fau.cs.osr.utils.test2" });
+		NameAbbrevService s = new NameAbbrevService(
+				new String[] {"de.fau.cs.osr.utils.test1", "ptk"},
+				new String[] {"de.fau.cs.osr.utils.test2", "ptk"});
 		
 		assertThat(s.abbrev(clazz2B), equalTo(abbrev2B));
 		assertThat(s.abbrev(clazz2C), equalTo(abbrev2C));
 		assertThat(s.abbrev(clazz1A), equalTo(abbrev1A));
 		assertThat(s.abbrev(clazz1B), equalTo(abbrev1B));
 		
-		assertThat(s.resolve(abbrev2B), equalTo(clazz2B));
-		assertThat(s.resolve(abbrev2C), equalTo(clazz2C));
-		assertThat(s.resolve(abbrev1A), equalTo(clazz1A));
-		assertThat(s.resolve(abbrev1B), equalTo(clazz1B));
+		assertThat(s.resolve(abbrev2B[0]), equalTo(clazz2B));
+		assertThat(s.resolve(abbrev2C[0]), equalTo(clazz2C));
+		assertThat(s.resolve(abbrev1A[0]), equalTo(clazz1A));
+		assertThat(s.resolve(abbrev1B[0]), equalTo(clazz1B));
 	}
 	
 	@Test
@@ -85,17 +85,17 @@ public class NameAbbrevServiceTest
 		Class clazz1B = de.fau.cs.osr.utils.test1.ClassB.class;
 		Class clazz2B = de.fau.cs.osr.utils.test2.ClassB.class;
 		
-		String abbrev1B = "de.fau.cs.osr.utils.test1.ClassB";
-		String abbrev2B = "ClassB";
+		String[] abbrev1B = new String[] {"de.fau.cs.osr.utils.test1.ClassB", "ptk"};
+		String[] abbrev2B = new String[] {"ClassB", "ptk"};
 		
-		NameAbbrevService s = new NameAbbrevService(new String[] {
-				"de.fau.cs.osr.utils.test2",
-				"de.fau.cs.osr.utils.test1" });
+		NameAbbrevService s = new NameAbbrevService(
+				new String[] {"de.fau.cs.osr.utils.test2", "ptk"},
+				new String[] {"de.fau.cs.osr.utils.test1", "ptk"});
 		
 		assertThat(s.abbrev(clazz1B), equalTo(abbrev1B));
 		assertThat(s.abbrev(clazz2B), equalTo(abbrev2B));
 		
-		assertThat(s.resolve(abbrev1B), equalTo(clazz1B));
-		assertThat(s.resolve(abbrev2B), equalTo(clazz2B));
+		assertThat(s.resolve(abbrev1B[0]), equalTo(clazz1B));
+		assertThat(s.resolve(abbrev2B[0]), equalTo(clazz2B));
 	}
 }

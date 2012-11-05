@@ -19,7 +19,11 @@ package de.fau.cs.osr.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.collections.BidiMap;
 import org.apache.commons.collections.bidimap.DualHashBidiMap;
@@ -37,21 +41,31 @@ import de.fau.cs.osr.utils.ReflectionUtils.ArrayInfo;
  */
 public class NameAbbrevService
 {
-	private final List<String> packages = new ArrayList<String>();
+	private static final String PTK_NS = "http://sweble.org/doc/site/tooling/parser-toolkit/ptk-xml-tools";	
+	private static final String PTK = "ptk";
+	
+	private final List<String[]> packages = new ArrayList<String[]>();
 	
 	private final boolean strict;
 	
 	/** Maps Class<?> (Key) -> String (Value) */
 	private BidiMap cache;
+	/** Maps prefix -> namespace URI */
+	private Map<String, String> usedPrefixes = new HashMap<String, String>();
+	 
 	
 	// =========================================================================
 	
+	public Map<String, String> getUsedPrefixes() {
+		return Collections.unmodifiableMap(usedPrefixes);
+	}
+
 	/**
 	 * The order of packages is vitally important to the process. If resolve()
 	 * is called with a different order of package names than abbrev(), some
 	 * abbreviated might get resolved to the wrong Class<?>!
 	 */
-	public NameAbbrevService(String... packageNames)
+	public NameAbbrevService(String[]... packageNames)
 	{
 		this(true, packageNames);
 	}
@@ -61,22 +75,29 @@ public class NameAbbrevService
 	 * is called with a different order of package names than abbrev(), some
 	 * abbreviated might get resolved to the wrong Class<?>!
 	 */
-	public NameAbbrevService(boolean strict, String... packageNames)
+	public NameAbbrevService(boolean strict, String[]... packageNames)
 	{
 		this.strict = strict;
 		
-		packages.add("java.lang");
+		packages.add(new String[]{"java.lang", PTK, PTK_NS});
 		packages.addAll(Arrays.asList(packageNames));
 		
 		cache = new DualHashBidiMap();
-		cache.put(byte.class, "byte");
-		cache.put(short.class, "short");
-		cache.put(int.class, "int");
-		cache.put(long.class, "long");
-		cache.put(float.class, "float");
-		cache.put(double.class, "double");
-		cache.put(boolean.class, "boolean");
-		cache.put(char.class, "char");
+		cache.put(byte.class, PTK + ":byte");
+		cache.put(short.class, PTK + ":short");
+		cache.put(int.class, PTK + ":int");
+		cache.put(long.class, PTK + ":long");
+		cache.put(float.class, PTK + ":float");
+		cache.put(double.class, PTK + ":double");
+		cache.put(boolean.class, PTK + ":boolean");
+		cache.put(char.class, PTK + ":char");
+	
+		for (Iterator<String[]> iter = packages.iterator(); iter.hasNext(); ) {
+			String[] namePrefixURI = iter.next();;
+			if (namePrefixURI.length > 2) {
+				usedPrefixes.put(namePrefixURI[1], namePrefixURI[2]);
+			}
+		}
 	}
 	
 	// =========================================================================
@@ -88,7 +109,7 @@ public class NameAbbrevService
 	 *             Thrown if the given class is not part of a packge from the
 	 *             package list.
 	 */
-	public String abbrev(Class<?> clazz)
+	public String[] abbrev(Class<?> clazz)
 	{
 		String suffix = "";
 		if (clazz.isArray())
@@ -98,10 +119,14 @@ public class NameAbbrevService
 			suffix = StringUtils.strrep("[]", info.dim);
 		}
 		
-		String shortName = (String) cache.get(clazz);
-		if (shortName != null)
-			return shortName + suffix;
-		
+		String[] shortName;
+		String classWithPrefix = (String)cache.get(clazz);
+		if (classWithPrefix != null)
+		{
+			String[] tmp = classWithPrefix.split(":"); 
+			return new String[] {tmp[1], tmp[0]}; 
+		}
+				
 		// clazz.getSimpleName(); doesn't work for nested classes!
 		String simpleName = clazz.getName();
 		{
@@ -110,39 +135,44 @@ public class NameAbbrevService
 				simpleName = simpleName.substring(i + 1);
 		}
 		
-		// Maybe the abbreviated name was already used for another class of the 
-		// same name.
-		if (cache.containsValue(simpleName))
+		for (Iterator<String> iter = usedPrefixes.keySet().iterator(); iter.hasNext();)
 		{
-			// Cannot abbreviate any more :(
-			shortName = clazz.getName();
-			cache.put(clazz, shortName);
-			return shortName + suffix;
+			String prefix = iter.next();
+			// Maybe the abbreviated name was already used for another class of the 
+			// same name.
+			if (cache.containsValue(new String[]{simpleName, prefix}))
+			{
+				// Cannot abbreviate any more :(
+				shortName = new String[] {clazz.getName(), prefix};
+				cache.put(clazz, shortName[1] + ":" + shortName[0]);
+				return new String[] {shortName[0] + suffix, prefix};
+			}
 		}
 		
 		final String dotSimpleName = "." + simpleName;
-		for (String pkg : packages)
+		for (String[] pkg : packages)
 		{
 			try
 			{
-				Class<?> otherClazz = Class.forName(pkg + dotSimpleName);
+				Class<?> otherClazz = Class.forName(pkg[0] + dotSimpleName);
 				// At this point a class with this simple name has not been 
 				// abbreviated. The first package that contains a class with 
 				// this simple name will be the one we abbreviate. All others 
 				// have to use the full name.
-				cache.put(otherClazz, simpleName);
+				cache.put(otherClazz, pkg[1] + ":" + simpleName);
 				
 				if (otherClazz != clazz)
 				{
 					// Cannot abbreviate any more :(
-					shortName = clazz.getName();
-					cache.put(clazz, shortName);
-					return shortName + suffix;
+					shortName = new String[] {clazz.getName(), pkg[1]};
+					cache.put(clazz, shortName[1] + ":" + shortName[0]);
+					return new String[] {shortName[0] + suffix, shortName[1]};
 				}
 				else
 				{
-					shortName = simpleName;
-					return shortName + suffix;
+//					shortname never used ...
+//					shortName = new String[] {simpleName, pkg[1]};
+					return new String[] {simpleName + suffix, pkg[1]};
 				}
 			}
 			catch (ClassNotFoundException e)
@@ -151,7 +181,7 @@ public class NameAbbrevService
 		}
 		
 		if (!strict)
-			return clazz.getName() + suffix;
+			return new String[] {clazz.getName() + suffix, ""};
 		
 		throw new IllegalArgumentException("Given class is not part of the package list: " + clazz.getName());
 	}
@@ -168,26 +198,29 @@ public class NameAbbrevService
 		int dim = getArrayDim(abbrev);
 		
 		abbrev = abbrev.substring(0, abbrev.length() - dim * 2);
-		
-		Class<?> clazz = (Class<?>) cache.getKey(abbrev);
-		if (clazz != null)
-			return arrayClassFor(clazz, dim);
-		
-		if (abbrev.indexOf('.') >= 0)
+
+		for (Iterator<String> iter = usedPrefixes.keySet().iterator(); iter.hasNext();)
 		{
-			// Full name was given
-			clazz = Class.forName(abbrev);
-			cache.put(clazz, abbrev);
-			return arrayClassFor(clazz, dim);
+			String prefix = iter.next();
+			Class<?> clazz = (Class<?>) cache.getKey(prefix + ":" + abbrev);
+			if (clazz != null)
+				return arrayClassFor(clazz, dim);
+
+			if (abbrev.indexOf('.') >= 0)
+			{
+				// Full name was given
+				clazz = Class.forName(abbrev);
+				cache.put(clazz, prefix + ":" + abbrev);
+				return arrayClassFor(clazz, dim);
+			}
 		}
-		
 		final String dotSimpleName = "." + abbrev;
-		for (String pkg : packages)
+		for (String pkg[] : packages)
 		{
 			try
 			{
-				clazz = Class.forName(pkg + dotSimpleName);
-				cache.put(clazz, abbrev);
+				Class<?> clazz = Class.forName(pkg[0] + dotSimpleName);
+				cache.put(clazz, pkg[1] + ":" + abbrev);
 				return arrayClassFor(clazz, dim);
 			}
 			catch (ClassNotFoundException e)
