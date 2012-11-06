@@ -140,7 +140,7 @@ public class NameAbbrevService
 			String prefix = iter.next();
 			// Maybe the abbreviated name was already used for another class of the 
 			// same name.
-			if (cache.containsValue(new String[]{simpleName, prefix}))
+			if (cache.containsValue(prefix + ":" + simpleName))
 			{
 				// Cannot abbreviate any more :(
 				shortName = new String[] {clazz.getName(), prefix};
