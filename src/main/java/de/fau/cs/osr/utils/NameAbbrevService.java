@@ -118,6 +118,29 @@ public class NameAbbrevService
 			clazz = info.elementClass;
 			suffix = StringUtils.strrep("[]", info.dim);
 		}
+		// Exchange for the interface class if the name is xImpl
+		Class<?> interfaceClazz = null;
+		String[] splitName = {clazz.getName()};
+		if (splitName[0].endsWith("Impl"))
+		{
+			try {
+				splitName = splitName[0].split("\\$");
+				interfaceClazz = Class.forName(splitName[0]);
+			} 
+			catch (ClassNotFoundException e) 
+			{ // implementation my not be nested
+				try {
+					splitName = splitName[0].split("Impl");
+					interfaceClazz = Class.forName(splitName[0]);
+				}
+				catch (ClassNotFoundException e2)
+				{
+					// no interface class? strange. whatever ...
+				}
+			}
+			if (interfaceClazz != null && interfaceClazz.isAssignableFrom(clazz))
+				clazz = interfaceClazz;
+		}
 		
 		String[] shortName;
 		String classWithPrefix = (String)cache.get(clazz);
@@ -161,7 +184,7 @@ public class NameAbbrevService
 				// have to use the full name.
 				cache.put(otherClazz, pkg[1] + ":" + simpleName);
 				
-				if (otherClazz != clazz)
+				if (otherClazz != clazz && !otherClazz.isAssignableFrom(clazz))
 				{
 					// Cannot abbreviate any more :(
 					shortName = new String[] {clazz.getName(), pkg[1]};
@@ -253,8 +276,21 @@ public class NameAbbrevService
 		return dim;
 	}
 	
-	private static Class<?> arrayClassFor(Class<?> clazz, int dim)
+	private static Class<?> arrayClassFor(Class<?> clazz, int dim) throws ClassNotFoundException
 	{
+		// restore concrete class for an interface
+		if (clazz.isInterface())
+		{
+			Class<?> concreteClazz = null;
+			try {
+				concreteClazz = Class.forName(clazz.getName() + "$" + clazz.getSimpleName() + "Impl");
+			} 
+			catch (ClassNotFoundException e) 
+			{ // implementation my not be nested
+				concreteClazz = Class.forName(clazz.getName() + "Impl");
+			}
+			clazz = concreteClazz;
+		}
 		if (dim == 0)
 			return clazz;
 		return ReflectionUtils.arrayClassFor(clazz, dim);
