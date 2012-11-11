@@ -46,7 +46,7 @@ public class NameAbbrevServiceTest
 	@Test
 	public void testAbbrevAndResolution() throws Exception
 	{
-		NameAbbrevService s = new NameAbbrevService(
+		NameAbbrevService s = new NameAbbrevService("ptk", "http://example.org/test-dummy-for-ptk",
 				new String[] {"de.fau.cs.osr.utils.test1", "ptk"},
 				new String[] {"de.fau.cs.osr.utils.test2", "ptk"});
 		
@@ -64,8 +64,8 @@ public class NameAbbrevServiceTest
 	@Test
 	public void testAbbrevOrderBHasSameResolutionAsAbbrevOrderA() throws Exception
 	{
-		NameAbbrevService s = new NameAbbrevService(
-				new String[] {"de.fau.cs.osr.utils.test1", "ptk"},
+		NameAbbrevService s = new NameAbbrevService("j", "http://java.oracle.com",
+				new String[] {"de.fau.cs.osr.utils.test1", "ptk", "http://example.org/test-dummy-for-ptk"},
 				new String[] {"de.fau.cs.osr.utils.test2", "ptk"});
 		
 		assertThat(s.abbrev(clazz2B), equalTo(abbrev2B));
@@ -88,8 +88,8 @@ public class NameAbbrevServiceTest
 		String[] abbrev1B = new String[] {"de.fau.cs.osr.utils.test1.ClassB", "ptk"};
 		String[] abbrev2B = new String[] {"ClassB", "ptk"};
 		
-		NameAbbrevService s = new NameAbbrevService(
-				new String[] {"de.fau.cs.osr.utils.test2", "ptk"},
+		NameAbbrevService s = new NameAbbrevService("j", "http://java.oracle.com",
+				new String[] {"de.fau.cs.osr.utils.test2", "ptk", "http://example.org/test-dummy-for-ptk"},
 				new String[] {"de.fau.cs.osr.utils.test1", "ptk"});
 		
 		assertThat(s.abbrev(clazz1B), equalTo(abbrev1B));

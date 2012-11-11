@@ -40,10 +40,7 @@ import de.fau.cs.osr.utils.ReflectionUtils.ArrayInfo;
  * abbreviated names.
  */
 public class NameAbbrevService
-{
-	private static final String PTK_NS = "http://sweble.org/doc/site/tooling/parser-toolkit/ptk-xml-tools";	
-	private static final String PTK = "ptk";
-	
+{	
 	private final List<String[]> packages = new ArrayList<String[]>();
 	
 	private final boolean strict;
@@ -65,9 +62,9 @@ public class NameAbbrevService
 	 * is called with a different order of package names than abbrev(), some
 	 * abbreviated might get resolved to the wrong Class<?>!
 	 */
-	public NameAbbrevService(String[]... packageNames)
+	public NameAbbrevService(String primitiveDataTypesNsPrefix, String primitiveDataTypesNsURI, String[]... packageNames)
 	{
-		this(true, packageNames);
+		this(primitiveDataTypesNsPrefix, primitiveDataTypesNsURI, true, packageNames);
 	}
 	
 	/**
@@ -75,27 +72,34 @@ public class NameAbbrevService
 	 * is called with a different order of package names than abbrev(), some
 	 * abbreviated might get resolved to the wrong Class<?>!
 	 */
-	public NameAbbrevService(boolean strict, String[]... packageNames)
+	public NameAbbrevService(String primitiveDataTypesNsPrefix, String primitiveDataTypesNsURI, boolean strict, String[]... packageNames)
 	{
 		this.strict = strict;
 		
-		packages.add(new String[]{"java.lang", PTK, PTK_NS});
+		packages.add(new String[]{"java.lang", primitiveDataTypesNsPrefix, primitiveDataTypesNsURI});
 		packages.addAll(Arrays.asList(packageNames));
 		
 		cache = new DualHashBidiMap();
-		cache.put(byte.class, PTK + ":byte");
-		cache.put(short.class, PTK + ":short");
-		cache.put(int.class, PTK + ":int");
-		cache.put(long.class, PTK + ":long");
-		cache.put(float.class, PTK + ":float");
-		cache.put(double.class, PTK + ":double");
-		cache.put(boolean.class, PTK + ":boolean");
-		cache.put(char.class, PTK + ":char");
+		cache.put(byte.class, primitiveDataTypesNsPrefix + ":byte");
+		cache.put(short.class, primitiveDataTypesNsPrefix + ":short");
+		cache.put(int.class, primitiveDataTypesNsPrefix + ":int");
+		cache.put(long.class, primitiveDataTypesNsPrefix + ":long");
+		cache.put(float.class, primitiveDataTypesNsPrefix + ":float");
+		cache.put(double.class, primitiveDataTypesNsPrefix + ":double");
+		cache.put(boolean.class, primitiveDataTypesNsPrefix + ":boolean");
+		cache.put(char.class, primitiveDataTypesNsPrefix + ":char");
 	
 		for (Iterator<String[]> iter = packages.iterator(); iter.hasNext(); ) {
-			String[] namePrefixURI = iter.next();;
+			String[] namePrefixURI = iter.next();
 			if (namePrefixURI.length > 2) {
-				usedPrefixes.put(namePrefixURI[1], namePrefixURI[2]);
+				if (usedPrefixes.get(namePrefixURI[1]) != null)
+					throw new IllegalArgumentException("A namespace URI is already set for this prefix.");
+				else
+					usedPrefixes.put(namePrefixURI[1], namePrefixURI[2]);
+			}
+			else if (usedPrefixes.get(namePrefixURI[1]) == null || usedPrefixes.get(namePrefixURI[1]).equals(""))
+			{
+				throw new IllegalArgumentException("A namespace URI has to be provided the first time this prefix is used.");
 			}
 		}
 	}
